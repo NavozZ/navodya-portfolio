@@ -10,17 +10,28 @@ import Footer           from './components/Footer';
 import ProjectModal     from './components/ProjectModal';
 import AdminDashboard, { loadMedia } from './components/AdminDashboard';
 import { projects }     from './data';
+import builtInMedia     from './mediaData';
 
 const SECTION_IDS   = ['home', 'works', 'skills', 'about-me', 'contacts'];
 const SECRET_CLICKS = 5;
 const SECRET_WINDOW = 2000;
+
+// Merge mediaData.js (committed to GitHub, works on Vercel) with
+// localStorage overrides (set via the Admin Dashboard locally).
+// localStorage takes priority so local edits are always reflected.
+function mergeMedia() {
+  const local  = loadMedia();
+  const merged = { ...builtInMedia };
+  Object.keys(local).forEach(id => { merged[id] = local[id]; });
+  return merged;
+}
 
 export default function App() {
   const [activeSection,   setActiveSection]   = useState('home');
   const [mobileMenuOpen,  setMobileMenuOpen]  = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [adminOpen,        setAdminOpen]       = useState(false);
-  const [allMedia,         setAllMedia]        = useState(loadMedia);
+  const [allMedia,         setAllMedia]        = useState(mergeMedia);
 
   /* ── hidden trigger: click logo dot 5× within 2s ── */
   const clickTs = useRef([]);
@@ -36,10 +47,9 @@ export default function App() {
 
   const handleAdminClose = () => {
     setAdminOpen(false);
-    setAllMedia(loadMedia()); // refresh after edits
+    setAllMedia(mergeMedia()); // re-merge after any edits
   };
 
-  /* ── scroll-based active nav ── */
   useEffect(() => {
     const onScroll = () => {
       let cur = 'home';
@@ -53,7 +63,6 @@ export default function App() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* ── close mobile menu on scroll ── */
   useEffect(() => {
     if (!mobileMenuOpen) return;
     const close = () => setMobileMenuOpen(false);
@@ -76,21 +85,14 @@ export default function App() {
         onLogoDotClick={handleLogoDotClick}
       />
       <Sidebar />
-
       <main>
         <Hero    gotoSection={gotoSection} />
-        <Works
-          projects={projects}
-          openModal={setSelectedProject}
-          allMedia={allMedia}
-        />
+        <Works   projects={projects} openModal={setSelectedProject} allMedia={allMedia} />
         <Skills  />
         <About   />
         <Contact />
       </main>
-
       <Footer />
-
       {selectedProject && (
         <ProjectModal
           project={selectedProject}
@@ -98,12 +100,8 @@ export default function App() {
           onClose={() => setSelectedProject(null)}
         />
       )}
-
       {adminOpen && (
-        <AdminDashboard
-          projects={projects}
-          onClose={handleAdminClose}
-        />
+        <AdminDashboard projects={projects} onClose={handleAdminClose} />
       )}
     </>
   );

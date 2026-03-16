@@ -256,7 +256,57 @@ export default function AdminDashboard({ projects, onClose }) {
     saveMedia({});
   };
 
-  const totalItems  = Object.values(media).reduce((s, a) => s + a.length, 0);
+  /* ── Export localStorage → mediaData.js file ── */
+  const exportToFile = () => {
+    if (Object.keys(media).length === 0) {
+      alert('No media to export yet. Add some images or videos first.');
+      return;
+    }
+
+    // Warn if any item is a base64 data URL (file upload) — too large for code
+    const hasBase64 = Object.values(media).flat().some(item =>
+      item.src.startsWith('data:')
+    );
+
+    const lines = ['// src/mediaData.js', '// Auto-generated from Admin Dashboard — paste into your project and push to GitHub.', ''];
+
+    if (hasBase64) {
+      lines.push('// ⚠ WARNING: Some items are uploaded files (base64). These are very large.');
+      lines.push('// Replace them with hosted URLs (Imgur, Cloudinary, GitHub /public/images/) before committing.');
+      lines.push('');
+    }
+
+    lines.push('const mediaData = {');
+
+    Object.entries(media).forEach(([id, items]) => {
+      lines.push(`  ${id}: [`);
+      items.forEach(item => {
+        const isBase64 = item.src.startsWith('data:');
+        if (isBase64) {
+          lines.push(`    // ⚠ REPLACE THIS — base64 file upload is too large for code:`);
+          lines.push(`    { src: 'REPLACE_WITH_HOSTED_URL' },`);
+        } else {
+          lines.push(`    { src: '${item.src}' },`);
+        }
+      });
+      lines.push(`  ],`);
+    });
+
+    lines.push('};');
+    lines.push('');
+    lines.push('export default mediaData;');
+
+    const content  = lines.join('\n');
+    const blob     = new Blob([content], { type: 'text/javascript' });
+    const url      = URL.createObjectURL(blob);
+    const a        = document.createElement('a');
+    a.href         = url;
+    a.download     = 'mediaData.js';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const totalItems    = Object.values(media).reduce((s, a) => s + a.length, 0);
   const totalProjects = Object.keys(media).length;
 
   return (
@@ -273,6 +323,7 @@ export default function AdminDashboard({ projects, onClose }) {
             </div>
           </div>
           <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+            <button className="adm-btn adm-btn-export" onClick={exportToFile}>↓ Export mediaData.js</button>
             <button className="adm-btn adm-btn-danger" onClick={clearAll}>Clear all</button>
             <button className="adm-btn adm-btn-close"  onClick={onClose}>✕ Close</button>
           </div>
@@ -281,7 +332,7 @@ export default function AdminDashboard({ projects, onClose }) {
         <div className="adm-stats-bar">
           <span>{totalItems} items across {totalProjects} project{totalProjects !== 1 ? 's' : ''}</span>
           <span style={{ color:'var(--muted)', fontSize:10 }}>
-            First item = card cover · ← → to reorder
+            Add all media → click Export → replace src/mediaData.js → push to GitHub
           </span>
         </div>
 
