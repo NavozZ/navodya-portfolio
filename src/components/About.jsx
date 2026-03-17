@@ -1,3 +1,5 @@
+import ppImage from '../assets/Pp.png';
+
 const HIGHLIGHTS = [
   { value: '9+',  label: 'Projects shipped'               },
   { value: '8+',  label: 'Frameworks used'                },
@@ -53,7 +55,7 @@ export default function About() {
               <div className="about-corner br"></div>
 
               
-                <img src="src/assets/Pp.png" alt="Navodya Theshan" />
+              <img src={ppImage} alt="Navodya Theshan" />
               
 
               <div className="about-tag">
